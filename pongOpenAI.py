@@ -3,19 +3,7 @@ import gym
 
 
 
-#parameteres
 
-batchSize=10
-gamma=0.99 #discount factor for reward
-decayRate=0.99
-learningRate=1e-4
-inputDimensions=80*80   #input dimensions 80*80 grid
-resume=False            #resume from a checkpoint
-rewardSum=0				#initialize reward rewardSum
-hiddenNeurons=200
-images,hiddenLayers,rewards,gradients=[],[],[],[]
-episodeNumber=0
-runningReward=None
 
 def sigmoid(x): 
   return 1.0 / (1.0 + np.exp(-x)) # sigmoid "squashing" function to interval [0,1]
@@ -44,11 +32,11 @@ def action(prob):
 	else:
 		return 3				#go down
 
-def discountRewards(rewards):
+def discountRewards(rewards,gamma):
 	discountedRewards=np.zeros_like(rewards)
 	runningAdd=0
 
-	for t in reversed(xrange(0,size.rewards.size)):
+	for t in reversed(range(0,rewards.size)):
 		if rewards[t]!=0:
 			runningAdd=0  #reset the sum at game boundary
 		runningAdd=runningAdd*gamma+rewards[t]
@@ -67,18 +55,31 @@ def backProp(hiddenLayers,gradients,images,model):
 	return {'W1':dCdW1,'W2':dCdW2}
 
 #RMSProp http://sebastianruder.com/optimizing-gradient-descent/index.html#rmsprop
-def updateWeights(model,gradientBuffer):
+def updateWeights(model,gradientBuffer,rmsProp,decayRate,learningRate):
 
-	for key,value in model.iteritems():
+	for key,value in model.items():
 		g=gradientBuffer[key]
-		rmsProp[key]=decayRate*rmsProp[key]+(1-decayRage)*g**2
-		model[key]+=learningRate*g/(np.sqrt(rmsProp[k])+1e-5)
-		gradientBuffer[k]=np.zeros_like(v)
+		rmsProp[key]=decayRate*rmsProp[key]+(1-decayRate)*g**2
+		model[key]+=learningRate*g/(np.sqrt(rmsProp[key])+1e-5)
+		gradientBuffer[key]=np.zeros_like(value)
 
 
 
 def init():
+	#parameteres
 
+	batchSize=10
+	gamma=0.99 #discount factor for reward
+	decayRate=0.99
+	learningRate=1e-4
+	inputDimensions=80*80   #input dimensions 80*80 grid
+	resume=False            #resume from a checkpoint
+	rewardSum=0				#initialize reward rewardSum
+	hiddenNeurons=200
+	episodeNumber=0
+	runningReward=None
+	render=False
+	images,hiddenLayers,rewards,gradients=[],[],[],[]
 	#if we have a checkpoint load it
 	if resume:
 		model=pickle.load(open('model.p','rb'))
@@ -87,6 +88,10 @@ def init():
 		model={}
 		model['W1']=np.random.randn(hiddenNeurons,inputDimensions)/np.sqrt(inputDimensions)    # initialize hidden layer
 		model['W2']=np.random.randn(hiddenNeurons)/np.sqrt(hiddenNeurons)					   # initialize output layer
+
+	backProgGradientBuffer = { k : np.zeros_like(v) for k,v in model.items() } # update buffers that add up gradients over a batch
+	rmsProp = { k : np.zeros_like(v) for k,v in model.items() } # rmsprop memory
+
 	env=gym.make("Pong-v0")   																   # set up the environment for pong
 	observation=env.reset()
 	previousImage=None
@@ -104,14 +109,14 @@ def init():
 		previousImage=currentImage  						#update previous image
 
 		prob,h=forwardPass(image,model)
-		action=action(prob)
+		actionResult=action(prob)
 
 		images.append(image)
 		hiddenLayers.append(h)
 
 
 		#give action a label
-		if action==2:
+		if actionResult==2:
 			y=1
 		else:
 			y=0
@@ -120,7 +125,7 @@ def init():
 		gradients.append(y-prob)
 
 		# perform the action
-		observation, reward, done, info = env.step(action)
+		observation, reward, done, info = env.step(actionResult)
 		rewardSum += reward
 
 		rewards.append(reward)
@@ -137,7 +142,7 @@ def init():
 			images,hiddenLayers,rewards,gradients=[],[],[],[]
 
 			#get discounted rewards
-			discountedEpisodeRewards=discountedRewards(episodeRewards)
+			discountedEpisodeRewards=discountRewards(episodeRewards,gamma)
 
 			#standardize the rewards
 			discountedEpisodeRewards=normalizeRewards(discountedEpisodeRewards)
@@ -152,13 +157,13 @@ def init():
 				backProgGradientBuffer[k]+=backProgGradient[k] #add gradients over batch
 
 			if episodeNumber%batchSize==0:  #if we hit the batch size update the weights
-				updateWeights(model,backProgGradientBuffer)
+				updateWeights(model,backProgGradientBuffer,rmsProp,decayRate,learningRate)
 
 			if runningReward is None:
 				runningReward=rewardSum
 			else:
 				runningReward=runningReward*0.99+rewardSum*0.01
-				print("resetting env. episode total reward was %f. running mean %f".format(rewardSum,runningReward))
+				print("resetting env. episode total reward was {}. running mean {}".format(rewardSum,runningReward))
 
 			if episodeNumber%100==0:
 				pickle.dump(model,open('model.p','wb'))
@@ -166,7 +171,7 @@ def init():
 			observation=env.reset()
 			previousImage=None
 		if reward!=0:
-			print('episode %d: game finished , reward %f'.format(episodeNumber,reward))
+			print('episode {}: game finished , reward {}'.format(episodeNumber,reward))
 
 
 
