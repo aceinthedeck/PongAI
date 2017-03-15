@@ -1,6 +1,6 @@
 import numpy as np
 import gym
-
+import pickle as pickle
 
 
 
@@ -73,7 +73,7 @@ def init():
 	decayRate=0.99
 	learningRate=1e-4
 	inputDimensions=80*80   #input dimensions 80*80 grid
-	resume=False            #resume from a checkpoint
+	resume=True           #resume from a checkpoint
 	rewardSum=0				#initialize reward rewardSum
 	hiddenNeurons=200
 	episodeNumber=0
@@ -82,6 +82,7 @@ def init():
 	images,hiddenLayers,rewards,gradients=[],[],[],[]
 	#if we have a checkpoint load it
 	if resume:
+		print("Using model from previous run")
 		model=pickle.load(open('model.p','rb'))
 	#else create a new model
 	else:
