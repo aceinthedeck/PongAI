@@ -159,7 +159,12 @@ def init():
 				backProgGradientBuffer[k]+=backProgGradient[k] #add gradients over batch
 
 			if episodeNumber%batchSize==0:  #if we hit the batch size update the weights
-				updateWeights(model,backProgGradientBuffer,rmsProp,decayRate,learningRate)
+				#updateWeights(model,backProgGradientBuffer,rmsProp,decayRate,learningRate)
+				for key,value in model.items():
+					g=backProgGradientBuffer[key]
+					rmsProp[key]=decayRate*rmsProp[key]+(1-decayRate)*g**2
+					model[key]+=learningRate*g/(np.sqrt(rmsProp[key])+1e-5)
+					backProgGradientBuffer[key]=np.zeros_like(value)
 
 			if runningReward is None:
 				runningReward=rewardSum
