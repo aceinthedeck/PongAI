@@ -73,7 +73,7 @@ def init():
 	decayRate=0.99
 	learningRate=1e-4
 	inputDimensions=80*80   #input dimensions 80*80 grid
-	resume=True           #resume from a checkpoint
+	resume=True          #resume from a checkpoint
 	rewardSum=0				#initialize reward rewardSum
 	hiddenNeurons=200
 	episodeNumber=0
@@ -83,7 +83,8 @@ def init():
 	#if we have a checkpoint load it
 	if resume:
 		print("Using model from previous run")
-		model=pickle.load(open('model.p','rb'))
+		model,runningReward,episodeNumber=pickle.load(open('model.p','rb'))
+		print("Continuing from episode number:{} and mean: {}".format(episodeNumber,runningReward))
 	#else create a new model
 	else:
 		model={}
@@ -164,15 +165,15 @@ def init():
 				runningReward=rewardSum
 			else:
 				runningReward=runningReward*0.99+rewardSum*0.01
-				print("resetting env. episode total reward was {}. running mean {}".format(rewardSum,runningReward))
+				print("resetting env. episode {} total reward was {}. running mean {}".format(episodeNumber,rewardSum,runningReward))
 
 			if episodeNumber%100==0:
-				pickle.dump(model,open('model.p','wb'))
+				pickle.dump([model,runningReward,episodeNumber],open('model.p','wb'))
 			rewardSum=0
 			observation=env.reset()
 			previousImage=None
-		if reward!=0:
-			print('episode {}: game finished , reward {}'.format(episodeNumber,reward))
+		#if reward!=0:
+			#print('episode {}: game finished , reward {}'.format(episodeNumber,reward))
 
 
 
