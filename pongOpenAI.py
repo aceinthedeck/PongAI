@@ -79,7 +79,7 @@ def init():
 	hiddenNeurons=200
 	episodeNumber=0
 	runningReward=None
-	render=True
+	render=False
 	images,hiddenLayers,rewards,gradients=[],[],[],[]
 	#if we have a checkpoint load it
 	if resume:
