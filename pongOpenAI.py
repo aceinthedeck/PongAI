@@ -172,7 +172,8 @@ def init():
 				runningReward=runningReward*0.99+rewardSum*0.01
 				print("resetting env. episode {} total reward was {}. running mean {}".format(episodeNumber,rewardSum,runningReward))
 
-			if episodeNumber%100==0:
+			if episodeNumber%10==0:
+				print("saving...till {} games".format(episodeNumber))
 				pickle.dump([model,runningReward,episodeNumber],open('model.p','wb'))
 			rewardSum=0
 			observation=env.reset()
