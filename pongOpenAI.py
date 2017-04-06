@@ -1,6 +1,7 @@
 import numpy as np
 import gym
 import pickle as pickle
+import time
 
 
 
@@ -78,7 +79,7 @@ def init():
 	hiddenNeurons=200
 	episodeNumber=0
 	runningReward=None
-	render=False
+	render=True
 	images,hiddenLayers,rewards,gradients=[],[],[],[]
 	#if we have a checkpoint load it
 	if resume:
@@ -97,11 +98,13 @@ def init():
 	env=gym.make("Pong-v0")   																   # set up the environment for pong
 	observation=env.reset()
 	previousImage=None
+	totalTime=0
 
 
 	while True:
 		if render:env.render()
 
+		startTime=time.monotonic()
 		currentImage=preprocessing(observation)				#process the current observation
 
 		if previousImage is not None:
@@ -170,7 +173,12 @@ def init():
 				runningReward=rewardSum
 			else:
 				runningReward=runningReward*0.99+rewardSum*0.01
-				print("resetting env. episode {} total reward was {}. running mean {}".format(episodeNumber,rewardSum,runningReward))
+				endTime=-startTime+time.monotonic()
+				totalTime+=endTime
+				if(rewardSum>0):
+					print("\033[1;32;40m Episode {} total reward was {}. running mean {}. Time taken {}. Total running time {}".format(episodeNumber,rewardSum,runningReward,endTime,totalTime))
+				else:
+					print("\033[1;31;40m Episode {} total reward was {}. running mean {}. Time taken {}. Total running time {}".format(episodeNumber,rewardSum,runningReward,endTime,totalTime))
 
 			if episodeNumber%10==0:
 				print("saving...till {} games".format(episodeNumber))
