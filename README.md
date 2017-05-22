@@ -4,3 +4,6 @@
  pip install gym[atari]
  
  To stop showing the game moves you can set the render variable to false. The repo contains already trained model.
+ 
+ 
+ This program is based on the blog post from Andrej http://karpathy.github.io/2016/05/31/rl/
